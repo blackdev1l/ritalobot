@@ -2,12 +2,13 @@ package main
 
 import (
 	"fmt"
-	"github.com/garyburd/redigo/redis"
 	"strings"
+
+	"github.com/garyburd/redigo/redis"
 )
 
 type Markov struct {
-	lenght int
+	length int
 }
 
 func (m Markov) Store(text string, c redis.Conn) {
@@ -15,7 +16,6 @@ func (m Markov) Store(text string, c redis.Conn) {
 	splitted := strings.Split(text, " ")
 
 	for k, v := range splitted {
-
 		if k < len(splitted)-1 {
 			c.Do("SADD", v, splitted[k+1])
 		}
@@ -34,7 +34,7 @@ func (m Markov) Generate(seed string, c redis.Conn) string {
 	key := string(splitted[0])
 
 	if len(splitted) > 2 {
-		for i := 1; i < m.lenght; i++ {
+		for i := 1; i < m.length; i++ {
 			text = text + " " + key
 
 			next, _ := redis.String(c.Do("SRANDMEMBER", key))

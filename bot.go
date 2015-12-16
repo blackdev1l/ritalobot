@@ -3,29 +3,29 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/garyburd/redigo/redis"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"strconv"
 	"time"
+
+	"github.com/garyburd/redigo/redis"
 )
 
-const API_URL = "https://api.telegram.org/bot"
+const APIURL = "https://api.telegram.org/bot"
 
 type Bot struct {
-	Token   string
-	Chat_id int
-	Seed    string
-	C       redis.Conn
+	Token  string
+	ChatID int
+	Seed   string
+	C      redis.Conn
 }
 
 func (b Bot) GetUpdates(m Markov) {
-
 	var esp Response
 
 	offset, _ := redis.String(b.C.Do("GET", "update_id"))
-	resp, err := http.Get(API_URL + b.Token + "/getUpdates?offset=" + offset)
+	resp, err := http.Get(APIURL + b.Token + "/getUpdates?offset=" + offset)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -40,26 +40,27 @@ func (b Bot) GetUpdates(m Markov) {
 			m.Store(v.Message.Text, b.C)
 		}
 
-		update_id := strconv.Itoa(esp.Result[len(esp.Result)-1].Update_id)
+		updateID := strconv.Itoa(esp.Result[len(esp.Result)-1].Update_id)
 
-		b.C.Do("SET", "update_id", update_id)
+		b.C.Do("SET", "update_id", updateID)
 
 	}
 	b.Seed = esp.Result[len(esp.Result)-1].Message.Text
 }
 
 func (b Bot) Say(text string) {
-	_, err := http.Get(API_URL + b.Token + "/sendMessage?chat_id=-15689316&text=" + text)
+	_, err := http.Get(APIURL + b.Token + "/sendMessage?chat_id" + string(chatID) + "&text=" + text)
 	if err != nil {
 		fmt.Println(err)
 	}
 }
 
-func (b Bot) Init(token string) {
+func (b Bot) Init() {
 
 	var err error
 
-	b.C, err = redis.Dial("tcp", ":6379")
+	port := ":" + string(port)
+	b.C, err = redis.Dial(connection, port)
 	if err != nil {
 		fmt.Println("connection to redis failed")
 		log.Fatal(err)

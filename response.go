@@ -4,6 +4,7 @@ type Response struct {
 	Ok     bool     `json:"ok"`
 	Result []Result `json:"result"`
 }
+
 type Result struct {
 	Update_id int     `json:"update_id"`
 	Message   Message `json:"message"`
