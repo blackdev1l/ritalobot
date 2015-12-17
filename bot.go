@@ -49,8 +49,7 @@ func (b Bot) GetUpdates(m Markov) string {
 
 func (b Bot) Say(text string) {
 	chat := strconv.Itoa(chatID)
-	fmt.Println(APIURL + token + "/sendMessage?chat_id=" + chat + "&text=" + text)
-	_, err := http.Get(APIURL + token + "/sendMessage?chat_id" + chat + "&text=" + text)
+	_, err := http.Get(APIURL + token + "/sendMessage?chat_id=" + chat + "&text=" + text)
 	if err != nil {
 		log.Println(err)
 	}
