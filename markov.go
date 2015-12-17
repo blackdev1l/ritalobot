@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	"log"
 	"strings"
 
 	"github.com/garyburd/redigo/redis"
@@ -25,26 +25,28 @@ func (m Markov) Store(text string, c redis.Conn) {
 }
 
 func (m Markov) Generate(seed string, c redis.Conn) string {
-	fmt.Printf("seed is %s\n", seed)
-	var text string
+	log.Printf("seed: %s\n", seed)
 
 	seed = strings.ToLower(seed)
 	splitted := strings.Split(seed, " ")
 
 	key := string(splitted[0])
 
+	s := []string{}
+
 	if len(splitted) > 2 {
 		for i := 1; i < m.length; i++ {
-			text = text + " " + key
+			s = append(s, key)
 
 			next, _ := redis.String(c.Do("SRANDMEMBER", key))
 			if next == "" {
-				return text
+				break
 			}
 
 			key = next
 		}
 	}
-
+	text := strings.Join(s, " ")
+	log.Printf("text: %s\n", text)
 	return text
 }

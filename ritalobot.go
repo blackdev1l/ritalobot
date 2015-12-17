@@ -71,7 +71,6 @@ func main() {
 	}
 
 	bot := Bot{}
-	bot.Init()
 
 	bot.Run()
 

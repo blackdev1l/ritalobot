@@ -17,15 +17,14 @@ const APIURL = "https://api.telegram.org/bot"
 type Bot struct {
 	Token  string
 	ChatID int
-	Seed   string
 	C      redis.Conn
 }
 
-func (b Bot) GetUpdates(m Markov) {
+func (b Bot) GetUpdates(m Markov) string {
 	var esp Response
 
 	offset, _ := redis.String(b.C.Do("GET", "update_id"))
-	resp, err := http.Get(APIURL + b.Token + "/getUpdates?offset=" + offset)
+	resp, err := http.Get(APIURL + token + "/getUpdates?offset=" + offset)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -34,9 +33,9 @@ func (b Bot) GetUpdates(m Markov) {
 	defer resp.Body.Close()
 	json.Unmarshal(updates, &esp)
 
+	log.Printf("%v messages downloaded\n", len(esp.Result))
 	for _, v := range esp.Result {
 		if v.Message.Text != "" {
-
 			m.Store(v.Message.Text, b.C)
 		}
 
@@ -45,18 +44,20 @@ func (b Bot) GetUpdates(m Markov) {
 		b.C.Do("SET", "update_id", updateID)
 
 	}
-	b.Seed = esp.Result[len(esp.Result)-1].Message.Text
+	return esp.Result[len(esp.Result)-1].Message.Text
 }
 
 func (b Bot) Say(text string) {
-	_, err := http.Get(APIURL + b.Token + "/sendMessage?chat_id" + string(chatID) + "&text=" + text)
+	chat := strconv.Itoa(chatID)
+	fmt.Println(APIURL + token + "/sendMessage?chat_id=" + chat + "&text=" + text)
+	_, err := http.Get(APIURL + token + "/sendMessage?chat_id" + chat + "&text=" + text)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 	}
+	log.Println("sent")
 }
 
-func (b Bot) Init() {
-
+func (b Bot) Run() {
 	var err error
 
 	port := ":" + strconv.Itoa(port)
@@ -67,12 +68,9 @@ func (b Bot) Init() {
 	}
 	defer b.C.Close()
 
-	b.Token = token
-}
+	fmt.Printf("redis connection: %v | port is %v\n", connection, port)
 
-func (b Bot) Run() {
-	mark := time.NewTicker(4 * time.Minute)
-	s := time.NewTicker(5 * time.Minute)
+	mark := time.NewTicker(30 * time.Second)
 
 	markov := Markov{10}
 
@@ -81,11 +79,8 @@ func (b Bot) Run() {
 	for {
 		select {
 		case <-mark.C:
-			b.GetUpdates(markov)
-			break
-		case <-s.C:
-
-			text := markov.Generate(b.Seed, b.C)
+			seed := b.GetUpdates(markov)
+			text := markov.Generate(seed, b.C)
 			b.Say(text)
 			break
 
