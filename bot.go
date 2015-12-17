@@ -70,7 +70,7 @@ func (b Bot) Run() {
 
 	fmt.Printf("redis connection: %v | port is %v\n", connection, port)
 
-	mark := time.NewTicker(30 * time.Second)
+	mark := time.NewTicker(5 * time.Minute)
 
 	markov := Markov{10}
 
