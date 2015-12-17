@@ -59,7 +59,7 @@ func (b Bot) Init() {
 
 	var err error
 
-	port := ":" + string(port)
+	port := ":" + strconv.Itoa(port)
 	b.C, err = redis.Dial(connection, port)
 	if err != nil {
 		fmt.Println("connection to redis failed")
