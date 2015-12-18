@@ -53,7 +53,6 @@ func (b Bot) Say(text string) {
 	if err != nil {
 		log.Println(err)
 	}
-	log.Println("sent")
 }
 
 func (b Bot) Run() {
