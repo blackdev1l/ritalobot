@@ -11,20 +11,28 @@ type Markov struct {
 	length int
 }
 
+
+func (m Markov) StoreUpdates(updates []Result, connection redis.Conn) {
+	for _, update := range updates {
+		if update.Message.Text != "" {
+			m.Store(update.Message.Text, connection)
+		}
+	}
+}
+
 func (m Markov) Store(text string, c redis.Conn) {
-	text = strings.ToLower(text)
+	text = strings.ToLower(text) //todo, no lower case
 	splitted := strings.Split(text, " ")
 
-	for k, v := range splitted {
-		if k < len(splitted)-1 {
-			c.Do("SADD", v, splitted[k+1])
+	for index, word := range splitted {
+		if index < len(splitted)-1 {
+			c.Do("SADD", word, splitted[index+1])
 		}
-
 	}
 
 }
 
-func (m Markov) Generate(seed string, c redis.Conn) string {
+func (m Markov) Generate(seed string, connection redis.Conn) string {
 	log.Printf("seed: %s\n", seed)
 
 	seed = strings.ToLower(seed)
@@ -38,7 +46,7 @@ func (m Markov) Generate(seed string, c redis.Conn) string {
 		for i := 1; i < m.length; i++ {
 			s = append(s, key)
 
-			next, _ := redis.String(c.Do("SRANDMEMBER", key))
+			next, _ := redis.String(connection.Do("SRANDMEMBER", key))
 			if next == "" {
 				break
 			}
@@ -46,7 +54,10 @@ func (m Markov) Generate(seed string, c redis.Conn) string {
 			key = next
 		}
 	}
+	
 	text := strings.Join(s, " ")
-	log.Printf("text: %s\n", text)
+	text = text + "."
+	log.Printf("Text: %s\n", text)
+
 	return text
 }
