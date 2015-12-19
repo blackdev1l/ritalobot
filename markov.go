@@ -13,15 +13,11 @@ type Markov struct {
 
 
 func (m Markov) StoreUpdates(updates []Result, connection redis.Conn) {
-	text = strings.ToLower(text) //todo, no lower case
-	splitted := strings.Split(text, " ")
-
-	for index, word := range splitted {
-		if index < len(splitted)-1 {
-			c.Do("SADD", word, splitted[index+1])
+	for _, update := range updates {
+		if update.Message.Text != "" {
+			m.Store(update.Message.Text, connection)
 		}
 	}
-
 }
 
 func (m Markov) Store(text string, c redis.Conn) {
