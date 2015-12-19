@@ -41,12 +41,6 @@ func (bot Bot) GetUpdates() []Result {
 	var updates = jsonResp.Result
 	log.Printf("%v messages downloaded\n", len(updates))
 
-	/*for _, update := range updates {
-		if update.Message.Text != "" {
-			m.Store(update.Message.Text, bot.Connection)
-		}
-	}*/
-
 	updateID := strconv.Itoa(updates[len(updates)-1].Update_id)
 	bot.Connection.Do("SET", "update_id", updateID) //TODO: update id + 1, download 0 msgs
 
@@ -89,11 +83,8 @@ func (bot Bot) Run() {
 		case <-timerUpdates.C:
 			var updates = bot.GetUpdates()
 
-			for _, update := range updates {
-				if update.Message.Text != "" {
-					markov.Store(update.Message.Text, bot.Connection)
-				}
-			}
+			markov.StoreUpdates(updates, bot.Connection)
+			
 			seed = updates[len(updates)-1].Message.Text
 			fmt.Printf("Next Seed: %s", seed)
 			break
