@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"strconv"
 	"time"
-
 	"github.com/garyburd/redigo/redis"
 )
 
@@ -17,37 +16,44 @@ const APIURL = "https://api.telegram.org/bot"
 type Bot struct {
 	Token  string
 	ChatID int
-	C      redis.Conn
+	Connection redis.Conn
 }
 
-func (b Bot) GetUpdates(m Markov) string {
-	var esp Response
+//this should only return updates, it should not store them!!
+func (bot Bot) GetUpdates() []Result {
 
-	offset, _ := redis.String(b.C.Do("GET", "update_id"))
+	var jsonResp Response
+
+
+	offset, _ := redis.String(bot.Connection.Do("GET", "update_id"))
+
+	log.Printf("Getting Updates")
 	resp, err := http.Get(APIURL + token + "/getUpdates?offset=" + offset)
 	if err != nil {
 		fmt.Println(err)
 	}
 
-	updates, _ := ioutil.ReadAll(resp.Body)
+	log.Printf("Parsing Updates")
+	tempUpdates, _ := ioutil.ReadAll(resp.Body)
 	defer resp.Body.Close()
-	json.Unmarshal(updates, &esp)
+	json.Unmarshal(tempUpdates, &jsonResp)
 
-	log.Printf("%v messages downloaded\n", len(esp.Result))
-	for _, v := range esp.Result {
-		if v.Message.Text != "" {
-			m.Store(v.Message.Text, b.C)
+	var updates = jsonResp.Result
+	log.Printf("%v messages downloaded\n", len(updates))
+
+	/*for _, update := range updates {
+		if update.Message.Text != "" {
+			m.Store(update.Message.Text, bot.Connection)
 		}
+	}*/
 
-		updateID := strconv.Itoa(esp.Result[len(esp.Result)-1].Update_id)
+	updateID := strconv.Itoa(updates[len(updates)-1].Update_id)
+	bot.Connection.Do("SET", "update_id", updateID) //TODO: update id + 1, download 0 msgs
 
-		b.C.Do("SET", "update_id", updateID)
-
-	}
-	return esp.Result[len(esp.Result)-1].Message.Text
+	return jsonResp.Result
 }
 
-func (b Bot) Say(text string) {
+func (bot Bot) Say(text string) {
 	chat := strconv.Itoa(chatID)
 	_, err := http.Get(APIURL + token + "/sendMessage?chat_id=" + chat + "&text=" + text)
 	if err != nil {
@@ -55,35 +61,51 @@ func (b Bot) Say(text string) {
 	}
 }
 
-func (b Bot) Run() {
+
+func (bot Bot) Run() {
 	var err error
 
 	port := ":" + strconv.Itoa(port)
-	b.C, err = redis.Dial(connection, port)
+	bot.Connection, err = redis.Dial(connection, port)
 	if err != nil {
 		fmt.Println("connection to redis failed")
 		log.Fatal(err)
 	}
-	defer b.C.Close()
+	defer bot.Connection.Close()
 
 	fmt.Printf("redis connection: %v | port is %v\n", connection, port)
 
-	mark := time.NewTicker(5 * time.Minute)
+	timerUpdates := time.NewTicker(30 * time.Second)
+	timerMessage := time.NewTicker(5 * time.Minute)
 
 	markov := Markov{10}
 
 	quit := make(chan struct{})
 
+	var seed string
+
 	for {
 		select {
-		case <-mark.C:
-			seed := b.GetUpdates(markov)
-			text := markov.Generate(seed, b.C)
-			b.Say(text)
+		case <-timerUpdates.C:
+			var updates = bot.GetUpdates()
+
+			for _, update := range updates {
+				if update.Message.Text != "" {
+					markov.Store(update.Message.Text, bot.Connection)
+				}
+			}
+			seed = updates[len(updates)-1].Message.Text
+			fmt.Printf("Next Seed: %s", seed)
+			break
+
+		case <-timerMessage.C:
+			text := markov.Generate(seed, bot.Connection)
+			bot.Say(text)
 			break
 
 		case <-quit:
-			mark.Stop()
+			timerMessage.Stop()
+			timerUpdates.Stop()
 			return
 		}
 	}
