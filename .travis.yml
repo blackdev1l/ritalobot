@@ -1,1 +1,7 @@
 language: go
+
+services:
+    - redis-server
+
+script:
+    - go build
