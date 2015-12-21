@@ -1,4 +1,4 @@
-# ritalobot ![Alt text](https://travis-ci.org/blackdev1l/ritalobot.svg)
+# ritalobot ![Alt text](https://travis-ci.org/blackdev1l/ritalobot.svg?branch=master)
 
 telegram bot written in golang which uses Markov Chain stored in redis
 
