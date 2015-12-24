@@ -3,19 +3,19 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/garyburd/redigo/redis"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"strconv"
 	"time"
-	"github.com/garyburd/redigo/redis"
 )
 
 const APIURL = "https://api.telegram.org/bot"
 
 type Bot struct {
-	Token  string
-	ChatID int
+	Token      string
+	ChatID     int
 	Connection redis.Conn
 }
 
@@ -23,7 +23,6 @@ type Bot struct {
 func (bot Bot) GetUpdates() []Result {
 
 	var jsonResp Response
-
 
 	offset, _ := redis.String(bot.Connection.Do("GET", "update_id"))
 
@@ -47,28 +46,29 @@ func (bot Bot) GetUpdates() []Result {
 	return jsonResp.Result
 }
 
-func (bot Bot) Say(text string) {
+func (bot Bot) Say(text string) int {
 	chat := strconv.Itoa(chatID)
-	_, err := http.Get(APIURL + token + "/sendMessage?chat_id=" + chat + "&text=" + text)
+	resp, err := http.Get(APIURL + token + "/sendMessage?chat_id=" + chat + "&text=" + text)
 	if err != nil {
 		log.Println(err)
 	}
+	return resp.StatusCode
 }
 
-
-func (bot Bot) Run() {
+func (bot Bot) Connect(connection string, p int) {
 	var err error
 
-	port := ":" + strconv.Itoa(port)
+	port := ":" + strconv.Itoa(p)
 	bot.Connection, err = redis.Dial(connection, port)
 	if err != nil {
 		fmt.Println("connection to redis failed")
 		log.Fatal(err)
 	}
-	defer bot.Connection.Close()
-
 	fmt.Printf("redis connection: %v | port is %v\n", connection, port)
 
+}
+
+func (bot Bot) Run() {
 	timerUpdates := time.NewTicker(30 * time.Second)
 	timerMessage := time.NewTicker(5 * time.Minute)
 
@@ -84,7 +84,7 @@ func (bot Bot) Run() {
 			var updates = bot.GetUpdates()
 
 			markov.StoreUpdates(updates, bot.Connection)
-			
+
 			seed = updates[len(updates)-1].Message.Text
 			fmt.Printf("Next Seed: %s", seed)
 			break
@@ -97,6 +97,7 @@ func (bot Bot) Run() {
 		case <-quit:
 			timerMessage.Stop()
 			timerUpdates.Stop()
+			bot.Connection.Close()
 			return
 		}
 	}

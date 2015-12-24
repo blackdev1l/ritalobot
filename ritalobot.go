@@ -30,12 +30,14 @@ func printLogo() {
 	fmt.Println(string(file))
 }
 
-func readConfig() {
+func readConfig(configPath string) int {
 
 	filename, _ := filepath.Abs(configPath)
 	file, err := ioutil.ReadFile(filename)
 	if err != nil {
-		log.Fatalln("no config file found, program will stop")
+		log.Println("no config file found")
+		log.Println(err)
+		return 1
 	}
 
 	var c Config
@@ -50,6 +52,7 @@ func readConfig() {
 	chatID = c.ChatID
 	connection = c.Connection
 	port = c.Port
+	return 0
 }
 
 func main() {
@@ -64,14 +67,14 @@ func main() {
 
 	flag.Parse()
 
-	readConfig()
+	readConfig(configPath)
 
 	if token == "" || chatID == 0 {
 		log.Fatalln("authentication token or chat id not valid, use config or flags to pass it")
 	}
 
 	bot := Bot{}
-
+	bot.Connect(connection, port)
 	bot.Run()
 
 }
