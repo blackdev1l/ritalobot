@@ -8,15 +8,6 @@ import (
 
 var bot Bot
 
-/*
-This test assumes that your redis connection
-is on default address and port
-*/
-func TestRedisConnection(t *testing.T) {
-
-	bot.Connect("tcp", 6379)
-}
-
 func TestSay(t *testing.T) {
 	test := "BEEP BOOP THIS IS A TEST"
 	if bot.Say(test) != 200 {
