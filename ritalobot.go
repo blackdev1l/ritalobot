@@ -74,7 +74,6 @@ func main() {
 	}
 
 	bot := Bot{}
-	bot.Connect(connection, port)
 	bot.Run()
 
 }

@@ -3,12 +3,13 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/garyburd/redigo/redis"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"strconv"
 	"time"
+
+	"github.com/garyburd/redigo/redis"
 )
 
 const APIURL = "https://api.telegram.org/bot"
@@ -55,20 +56,17 @@ func (bot Bot) Say(text string) int {
 	return resp.StatusCode
 }
 
-func (bot Bot) Connect(connection string, p int) {
+func (bot Bot) Run() {
 	var err error
 
-	port := ":" + strconv.Itoa(p)
-	bot.Connection, err = redis.Dial(connection, port)
+	tmp := ":" + strconv.Itoa(port)
+	bot.Connection, err = redis.Dial(connection, tmp)
 	if err != nil {
 		fmt.Println("connection to redis failed")
 		log.Fatal(err)
 	}
 	fmt.Printf("redis connection: %v | port is %v\n", connection, port)
 
-}
-
-func (bot Bot) Run() {
 	timerUpdates := time.NewTicker(30 * time.Second)
 	timerMessage := time.NewTicker(5 * time.Minute)
 
