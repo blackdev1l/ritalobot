@@ -5,3 +5,4 @@ services:
 
 script:
     - go build
+    - go test
