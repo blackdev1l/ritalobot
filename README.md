@@ -28,6 +28,6 @@ TODO
 
 - [x] Flags
 - [x] yaml config
-- [ ] custom temporization
+- [ ] increase / decrease chance from command
 - [ ] better Markov chain
 - [ ] command to start or stop bot

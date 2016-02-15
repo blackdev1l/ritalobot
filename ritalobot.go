@@ -16,11 +16,13 @@ var (
 	token      string
 	connection string
 	configPath string
+	chance     int
 )
 
 type Config struct {
 	Token      string `yaml:"token"`
 	ChatID     int    `yaml:"chatID"`
+	Chance     int    `yaml: "chance"`
 	Connection string `yaml:"connection"`
 	Port       int    `yaml:"port"`
 }
@@ -50,6 +52,7 @@ func readConfig(configPath string) int {
 
 	token = c.Token
 	chatID = c.ChatID
+	chance = c.Chance
 	connection = c.Connection
 	port = c.Port
 	return 0
@@ -64,6 +67,7 @@ func main() {
 	flag.StringVar(&connection, "conn", "tcp", "type of connection and/or ip of redis database")
 	flag.IntVar(&port, "p", 6379, "port number of redis database")
 	flag.StringVar(&configPath, "c", "./config.yml", "path for ritalobot config")
+	flag.IntVar(&chance, "chance", 10, "chance to say something after a message")
 
 	flag.Parse()
 

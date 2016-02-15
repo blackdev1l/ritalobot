@@ -18,7 +18,13 @@ func sendCommand(method, token string, params url.Values) ([]byte, error) {
 	url := fmt.Sprintf("https://api.telegram.org/bot%s/%s?%s",
 		token, method, params.Encode())
 
-	resp, err := http.Get(url)
+	timeout := 35 * time.Second
+
+	client := http.Client{
+		Timeout: timeout,
+	}
+
+	resp, err := client.Get(url)
 	if err != nil {
 		return []byte{}, err
 	}
@@ -32,63 +38,70 @@ func sendCommand(method, token string, params url.Values) ([]byte, error) {
 	return json, nil
 }
 
-const APIURL = "https://api.telegram.org/bot"
-
 type Bot struct {
 	Token      string
 	ChatID     int
 	Connection redis.Conn
+	Chance     int
 }
 
-//this should only return updates, it should not store them!!
 func (bot Bot) GetUpdates() []Result {
-
-	timeout := 35 * time.Second
-	var jsonResp Response
-
-	client := http.Client{
-		Timeout: timeout,
-	}
-
 	offset, _ := redis.String(bot.Connection.Do("GET", "update_id"))
 
-	log.Printf("Getting Updates")
-	resp, err := client.Get(APIURL + token + "/getUpdates?offset=" + offset + "&timeout=" + strconv.Itoa(30))
+	params := url.Values{}
+	params.Set("offset", offset)
+	params.Set("timeout", strconv.Itoa(30))
+
+	resp, err := sendCommand("getUpdates", token, params)
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 	}
 
-	tempUpdates, _ := ioutil.ReadAll(resp.Body)
-	defer resp.Body.Close()
-	json.Unmarshal(tempUpdates, &jsonResp)
+	var updatesRecieved Response
+	json.Unmarshal(resp, &updatesRecieved)
 
-	log.Printf("Parsing Updates")
-	var updates = jsonResp.Result
+	if !updatesRecieved.Ok {
+		err = fmt.Errorf("chobot: %s\n", updatesRecieved.Description)
+		return nil
+	}
+
+	var updates = updatesRecieved.Result
 	if len(updates) != 0 {
 		log.Printf("%v messages downloaded\n", len(updates))
 
 		updateID := updates[len(updates)-1].Update_id + 1
-		bot.Connection.Do("SET", "update_id", updateID) //TODO: update id + 1, download 0 msgs
+		bot.Connection.Do("SET", "update_id", updateID)
 
-		return jsonResp.Result
+		return updates
 
 	}
 	return nil
 }
 
-func (bot Bot) Say(text string) int {
+func (bot Bot) Say(text string) error {
+
+	var responseRecieved struct {
+		Ok          bool
+		Description string
+	}
+
 	chat := strconv.Itoa(chatID)
 	params := url.Values{}
 
 	params.Set("chat_id", chat)
 	params.Set("text", text)
-	url := fmt.Sprintf("https://api.telegram.org/bot%s/%s?%s",
-		token, "sendMessage", params.Encode())
-	resp, err := http.Get(url)
+	resp, err := sendCommand("sendMessage", token, params)
+
+	err = json.Unmarshal(resp, &responseRecieved)
 	if err != nil {
-		log.Println(err)
+		return err
 	}
-	return resp.StatusCode
+
+	if !responseRecieved.Ok {
+		return fmt.Errorf("telebot: %s", responseRecieved.Description)
+	}
+
+	return nil
 }
 
 func (bot Bot) Listen() {
@@ -109,12 +122,11 @@ func (bot Bot) Listen() {
 		updates := bot.GetUpdates()
 		if updates != nil {
 			markov.StoreUpdates(updates, bot.Connection)
-			if rand.Intn(100) <= 10 {
+			if rand.Intn(100) <= bot.Chance {
 				seed = updates[len(updates)-1].Message.Text
 				fmt.Printf("Next Seed: %s", seed)
 				text := markov.Generate(seed, bot.Connection)
 				bot.Say(text)
-
 			}
 		}
 	}

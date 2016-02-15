@@ -1,8 +1,9 @@
 package main
 
 type Response struct {
-	Ok     bool     `json:"ok"`
-	Result []Result `json:"result"`
+	Ok          bool     `json:"ok"`
+	Result      []Result `json:"result"`
+	Description string
 }
 
 type Result struct {
