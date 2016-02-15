@@ -74,6 +74,6 @@ func main() {
 	}
 
 	bot := Bot{}
-	bot.Run()
+	bot.Listen()
 
 }

@@ -11,7 +11,6 @@ type Markov struct {
 	length int
 }
 
-
 func (m Markov) StoreUpdates(updates []Result, connection redis.Conn) {
 	for _, update := range updates {
 		if update.Message.Text != "" {
@@ -54,10 +53,8 @@ func (m Markov) Generate(seed string, connection redis.Conn) string {
 			key = next
 		}
 	}
-	
-	text := strings.Join(s, " ")
-	text = text + "."
-	log.Printf("Text: %s\n", text)
 
+	text := strings.Join(s, " ")
+	log.Printf("Text: %s\n", text)
 	return text
 }
