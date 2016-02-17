@@ -128,6 +128,10 @@ func (bot Bot) Listen() {
 				text := markov.Generate(seed, bot.Connection)
 				bot.Say(text)
 			}
+
+			if updates[0].Message.Text == "" {
+				//TODO
+			}
 		}
 	}
 }
