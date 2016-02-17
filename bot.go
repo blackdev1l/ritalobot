@@ -109,6 +109,7 @@ func (bot Bot) Listen() {
 	var seed string
 	markov := Markov{10}
 	rand.Seed(time.Now().UnixNano())
+	bot.Chance = chance
 
 	tmp := ":" + strconv.Itoa(port)
 	bot.Connection, err = redis.Dial(connection, tmp)
@@ -117,6 +118,7 @@ func (bot Bot) Listen() {
 		log.Fatal(err)
 	}
 	fmt.Printf("redis connection: %v | port is %v\n", connection, port)
+	fmt.Printf("chance rate %v%!\n", bot.Chance)
 
 	for {
 		updates := bot.GetUpdates()
