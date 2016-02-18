@@ -2,3 +2,4 @@ config.yml
 *.exe
 ritalobot
 dump.rdb
+*.swp
