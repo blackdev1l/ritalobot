@@ -11,7 +11,6 @@ import (
 )
 
 var (
-	chatID     int
 	port       int
 	token      string
 	connection string
@@ -21,7 +20,6 @@ var (
 
 type Config struct {
 	Token      string `yaml:"token"`
-	ChatID     int    `yaml:"chatID"`
 	Chance     int    `yaml: "chance"`
 	Connection string `yaml:"connection"`
 	Port       int    `yaml:"port"`
@@ -51,7 +49,6 @@ func readConfig(configPath string) int {
 	}
 
 	token = c.Token
-	chatID = c.ChatID
 	chance = c.Chance
 	connection = c.Connection
 	port = c.Port
@@ -63,7 +60,6 @@ func main() {
 	printLogo()
 
 	flag.StringVar(&token, "token", "", "authentication token for the telegram bot")
-	flag.IntVar(&chatID, "id", 0, "Chat id of the group chat")
 	flag.StringVar(&connection, "conn", "tcp", "type of connection and/or ip of redis database")
 	flag.IntVar(&port, "p", 6379, "port number of redis database")
 	flag.StringVar(&configPath, "c", "./config.yml", "path for ritalobot config")
@@ -73,8 +69,8 @@ func main() {
 
 	readConfig(configPath)
 
-	if token == "" || chatID == 0 {
-		log.Fatalln("authentication token or chat id not valid, use config or flags to pass it")
+	if token == "" {
+		log.Fatalln("authentication token not valid, use config or flags to pass it")
 	}
 
 	bot := Bot{}

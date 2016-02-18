@@ -1,4 +1,4 @@
 token: abcdefgh1234567890
-chatID: -12345678
 connection: tcp
+chance: 20
 port: 6379

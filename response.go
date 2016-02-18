@@ -14,10 +14,15 @@ type Result struct {
 type Message struct {
 	Message_id int    `json:"message_id"`
 	From       From   `json:"from"`
+	Chat       Chat   `json:"chat"`
 	Text       string `json:"text"`
 }
 
 type From struct {
 	Id       int
 	Username string
+}
+
+type Chat struct {
+	Id int
 }
