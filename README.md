@@ -4,6 +4,7 @@ telegram bot written in golang which uses Markov Chain stored in redis
 
 Installation
 ------------
+you need *golang* >= *1.3* and *redis* installed on your machine.  
 `go get github.com/blackdev1l/ritalobot`
 
 Usage
@@ -30,3 +31,6 @@ TODO
 - [ ] increase / decrease chance from command
 - [ ] better Markov chain
 - [ ] command to start or stop bot
+
+
+![works on my machine](http://www.edsquared.com/content/binary/Windows-Live-Writer/dbb6c39a79dc_68DE/WorksOnMyMachine_3.png)
