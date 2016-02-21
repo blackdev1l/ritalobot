@@ -14,7 +14,6 @@ Usage
 flag | default | help
 -c="./config.yml": path for ritalobot config
 -conn="tcp": type of connection and/or ip of redis database
--id=0: Chat id of the group chat
 -p=6379: port number of redis database
 -token="": authentication token for the telegram bot
 ```
