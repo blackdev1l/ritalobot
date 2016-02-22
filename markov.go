@@ -20,15 +20,16 @@ func (m Markov) StoreUpdates(updates []Result, connection redis.Conn) {
 }
 
 func (m Markov) Store(text string, c redis.Conn) {
-	text = strings.ToLower(text) //todo, no lower case
 	splitted := strings.Split(text, " ")
 
-	for index, word := range splitted {
-		if index < len(splitted)-1 {
-			c.Do("SADD", word, splitted[index+1])
+	// if the first word has '/' character skip the whole string
+	if !strings.ContainsAny(splitted[0], "/") {
+		for index, word := range splitted {
+			if index < len(splitted)-1 {
+				c.Do("SADD", word, splitted[index+1])
+			}
 		}
 	}
-
 }
 
 func (m Markov) Generate(seed string, connection redis.Conn) string {
@@ -41,12 +42,10 @@ func (m Markov) Generate(seed string, connection redis.Conn) string {
 
 	s := []string{}
 
-	s = append(s, key)
-	for i := 1; i < 20; i++ {
+	for i := 1; i < m.length; i++ {
+		s = append(s, key)
 
 		next, _ := redis.String(connection.Do("SRANDMEMBER", key))
-
-		s = append(s, next)
 		key = next
 
 		matched, _ := regexp.MatchString(".*[\\.;!?¿¡]$", next)
