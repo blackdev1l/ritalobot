@@ -131,8 +131,17 @@ func (bot Bot) Listen() {
 					text := markov.Generate(match[0][1], bot.Connection)
 					bot.Say(text, update.Message.Chat.Id)
 					hasSpoken = true
+					updates = append(updates[:i], updates[i+1:]...)	
 				}
-				updates = append(updates[:i], updates[i+1:]...)	
+
+				re = regexp.MustCompile("\\/chorate\\s+([0-9]+?)\\b")
+				match = re.FindAllStringSubmatch(update.Message.Text, -1)
+				if len(match)>0{
+					bot.Chance, _ = strconv.Atoi(match[0][1])
+					bot.Say("Rate updated", update.Message.Chat.Id)
+					hasSpoken = true
+					updates = append(updates[:i], updates[i+1:]...)	
+				}
 			}
 
 			if len(updates)>0 {
