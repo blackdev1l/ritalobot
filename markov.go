@@ -40,16 +40,18 @@ func (m Markov) Generate(seed string, connection redis.Conn) string {
 
 	s := []string{}
 
+	s = append(s, key)
 	for i := 1; i < m.length; i++ {
-		s = append(s, key)
 
 		next, _ := redis.String(connection.Do("SRANDMEMBER", key))
-		key = next
+		s = append(s, next)
 
 		matched, _ := regexp.MatchString(".*[\\.;!?¿¡]$", next)
 		if next == "" || matched {
 			break
 		}
+
+		key = next
 	}
 
 	text := strings.Join(s, " ")
