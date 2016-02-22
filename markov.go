@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 	"strings"
-
+	"regexp"
 	"github.com/garyburd/redigo/redis"
 )
 
@@ -41,16 +41,17 @@ func (m Markov) Generate(seed string, connection redis.Conn) string {
 
 	s := []string{}
 
-	if len(splitted) > 2 {
-		for i := 1; i < m.length; i++ {
-			s = append(s, key)
+	s = append(s, key)
+	for i := 1; i < 20; i++ {
+		
+		next, _ := redis.String(connection.Do("SRANDMEMBER", key))
+		
+		s = append(s, next)
+		key = next
 
-			next, _ := redis.String(connection.Do("SRANDMEMBER", key))
-			if next == "" {
-				break
-			}
-
-			key = next
+		matched, _ := regexp.MatchString(".*[\\.;!?¿¡]$", next)
+		if next == "" || matched{
+			break
 		}
 	}
 
