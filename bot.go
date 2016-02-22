@@ -3,15 +3,15 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/garyburd/redigo/redis"
 	"io/ioutil"
 	"log"
 	"math/rand"
 	"net/http"
 	"net/url"
+	"regexp"
 	"strconv"
 	"time"
-
-	"github.com/garyburd/redigo/redis"
 )
 
 func sendCommand(method, token string, params url.Values) ([]byte, error) {
@@ -121,18 +121,40 @@ func (bot Bot) Listen() {
 	for {
 		updates := bot.GetUpdates()
 		if updates != nil {
-			markov.StoreUpdates(updates, bot.Connection)
-			if rand.Intn(100) <= bot.Chance {
-				seed = updates[len(updates)-1].Message.Text
-				chat := updates[len(updates)-1].Message.Chat.Id
-				fmt.Printf("Next Seed: %s", seed)
-				text := markov.Generate(seed, bot.Connection)
-				bot.Say(text, chat)
+
+			hasSpoken := false
+			for i := 0; i < len(updates); i++ {
+				update := updates[i]
+				re := regexp.MustCompile("\\/chobot\\s+(.+?)\\b")
+				match := re.FindAllStringSubmatch(update.Message.Text, -1)
+				if len(match) > 0 {
+					text := markov.Generate(match[0][1], bot.Connection)
+					bot.Say(text, update.Message.Chat.Id)
+					hasSpoken = true
+					updates = append(updates[:i], updates[i+1:]...)
+				}
+
+				re = regexp.MustCompile("\\/chorate\\s+([0-9]+?)\\b")
+				match = re.FindAllStringSubmatch(update.Message.Text, -1)
+				if len(match) > 0 {
+					bot.Chance, _ = strconv.Atoi(match[0][1])
+					bot.Say("Rate updated", update.Message.Chat.Id)
+					hasSpoken = true
+					updates = append(updates[:i], updates[i+1:]...)
+				}
 			}
 
-			if updates[0].Message.Text == "" {
-				//TODO
+			if len(updates) > 0 {
+				markov.StoreUpdates(updates, bot.Connection)
+				if rand.Intn(100) <= bot.Chance && !hasSpoken {
+					seed = updates[len(updates)-1].Message.Text
+					chat := updates[len(updates)-1].Message.Chat.Id
+					fmt.Printf("Next Seed: %s", seed)
+					text := markov.Generate(seed, bot.Connection)
+					bot.Say(text, chat)
+				}
 			}
+
 		}
 	}
 }
