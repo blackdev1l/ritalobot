@@ -86,7 +86,6 @@ func (bot Bot) GetUpdates() []Result {
 
 	var updates = updatesRecieved.Result
 	if len(updates) != 0 {
-		log.Printf("%v messages downloaded\n", len(updates))
 
 		updateID := updates[len(updates)-1].Update_id + 1
 		bot.Connection.Do("SET", "update_id", updateID)

@@ -33,7 +33,6 @@ func (m Markov) Store(text string, c redis.Conn) {
 func (m Markov) Generate(seed string, connection redis.Conn) string {
 	log.Printf("seed: %s\n", seed)
 
-	seed = strings.ToLower(seed)
 	splitted := strings.Split(seed, " ")
 
 	key := string(splitted[0])
