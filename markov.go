@@ -13,7 +13,8 @@ type Markov struct {
 
 func (m Markov) StoreUpdates(updates []Result, connection redis.Conn) {
 	for _, update := range updates {
-		if update.Message.Text != "" {
+		message := update.Message.Text
+		if message != "" && !strings.HasPrefix(message, "/") {
 			m.Store(update.Message.Text, connection)
 		}
 	}
@@ -22,12 +23,9 @@ func (m Markov) StoreUpdates(updates []Result, connection redis.Conn) {
 func (m Markov) Store(text string, c redis.Conn) {
 	splitted := strings.Split(text, " ")
 
-	// if the first word has '/' character skip the whole string
-	if !strings.ContainsAny(splitted[0], "/") {
-		for index, word := range splitted {
-			if index < len(splitted)-1 {
-				c.Do("SADD", word, splitted[index+1])
-			}
+	for index, word := range splitted {
+		if index < len(splitted)-1 {
+			c.Do("SADD", word, splitted[index+1])
 		}
 	}
 }
