@@ -10,7 +10,7 @@ import (
 	"net/url"
 	"strconv"
 	"time"
-
+	"regexp"
 	"github.com/garyburd/redigo/redis"
 )
 
@@ -121,18 +121,31 @@ func (bot Bot) Listen() {
 	for {
 		updates := bot.GetUpdates()
 		if updates != nil {
-			markov.StoreUpdates(updates, bot.Connection)
-			if rand.Intn(100) <= bot.Chance {
-				seed = updates[len(updates)-1].Message.Text
-				chat := updates[len(updates)-1].Message.Chat.Id
-				fmt.Printf("Next Seed: %s", seed)
-				text := markov.Generate(seed, bot.Connection)
-				bot.Say(text, chat)
+
+			hasSpoken :=false
+			for i := 0; i<len(updates); i++ {
+				update := updates[i]
+				re := regexp.MustCompile("\\/chobot\\s+(.+?)\\b")
+				match := re.FindAllStringSubmatch(update.Message.Text, -1)
+				if len(match)>0{
+					text := markov.Generate(match[0][1], bot.Connection)
+					bot.Say(text, update.Message.Chat.Id)
+					hasSpoken = true
+				}
+				updates = append(updates[:i], updates[i+1:]...)	
 			}
 
-			if updates[0].Message.Text == "" {
-				//TODO
+			if len(updates)>0 {
+				markov.StoreUpdates(updates, bot.Connection)
+				if rand.Intn(100) <= bot.Chance && !hasSpoken {
+					seed = updates[len(updates)-1].Message.Text
+					chat := updates[len(updates)-1].Message.Chat.Id
+					fmt.Printf("Next Seed: %s", seed)
+					text := markov.Generate(seed, bot.Connection)
+					bot.Say(text, chat)
+				}
 			}
+			
 		}
 	}
 }
