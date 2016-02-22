@@ -38,7 +38,7 @@ func sendCommand(method, token string, params url.Values) ([]byte, error) {
 	return json, nil
 }
 
-func (bot Bot) Commands(command string, chat int) {
+func (bot *Bot) Commands(command string, chat int) {
 	markov := Markov{20}
 	word := strings.Split(command, " ")
 
@@ -51,7 +51,7 @@ func (bot Bot) Commands(command string, chat int) {
 			bot.Say("please use a number between 1 and 100", chat)
 		} else {
 			bot.Chance = n
-			log.Printf("bot rate set to %v\n", n)
+			log.Printf("bot rate set to %v\n", bot.Chance)
 			bot.Say("Rate setted ", chat)
 		}
 	}
