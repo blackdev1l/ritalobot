@@ -9,8 +9,8 @@ import (
 	"math/rand"
 	"net/http"
 	"net/url"
-	"regexp"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -36,6 +36,26 @@ func sendCommand(method, token string, params url.Values) ([]byte, error) {
 	}
 
 	return json, nil
+}
+
+func (bot Bot) Commands(command string, chat int) {
+	markov := Markov{20}
+	word := strings.Split(command, " ")
+
+	if word[0] == "/chobot" && len(word) >= 2 {
+		text := markov.Generate(word[1], bot.Connection)
+		bot.Say(text, chat)
+	} else if word[0] == "/chorate" {
+		n, err := strconv.Atoi(word[1])
+		if err != nil || n <= 0 || n > 100 {
+			bot.Say("please use a number between 1 and 100", chat)
+		} else {
+			bot.Chance = n
+			log.Printf("bot rate set to %v\n", n)
+			bot.Say("Rate setted ", chat)
+		}
+	}
+
 }
 
 type Bot struct {
@@ -104,8 +124,7 @@ func (bot Bot) Say(text string, chat int) (bool, error) {
 
 func (bot Bot) Listen() {
 	var err error
-	var seed string
-	markov := Markov{10}
+
 	rand.Seed(time.Now().UnixNano())
 	bot.Chance = chance
 
@@ -118,41 +137,25 @@ func (bot Bot) Listen() {
 	fmt.Printf("redis connection: %v | port is %v\n", connection, port)
 	fmt.Printf("chance rate %v%!\n", bot.Chance)
 
+	bot.Poll()
+
+}
+
+func (bot Bot) Poll() {
+	markov := Markov{10}
 	for {
 		updates := bot.GetUpdates()
 		if updates != nil {
+			markov.StoreUpdates(updates, bot.Connection)
+			if strings.HasPrefix(updates[0].Message.Text, "/cho") {
+				bot.Commands(updates[0].Message.Text,
+					updates[0].Message.Chat.Id)
 
-			hasSpoken := false
-			for i := 0; i < len(updates); i++ {
-				update := updates[i]
-				re := regexp.MustCompile("\\/chobot\\s+(.+?)\\b")
-				match := re.FindAllStringSubmatch(update.Message.Text, -1)
-				if len(match) > 0 {
-					text := markov.Generate(match[0][1], bot.Connection)
-					bot.Say(text, update.Message.Chat.Id)
-					hasSpoken = true
-					updates = append(updates[:i], updates[i+1:]...)
-				}
-
-				re = regexp.MustCompile("\\/chorate\\s+([0-9]+?)\\b")
-				match = re.FindAllStringSubmatch(update.Message.Text, -1)
-				if len(match) > 0 {
-					bot.Chance, _ = strconv.Atoi(match[0][1])
-					bot.Say("Rate updated", update.Message.Chat.Id)
-					hasSpoken = true
-					updates = append(updates[:i], updates[i+1:]...)
-				}
-			}
-
-			if len(updates) > 0 {
-				markov.StoreUpdates(updates, bot.Connection)
-				if rand.Intn(100) <= bot.Chance && !hasSpoken {
-					seed = updates[len(updates)-1].Message.Text
-					chat := updates[len(updates)-1].Message.Chat.Id
-					fmt.Printf("Next Seed: %s", seed)
-					text := markov.Generate(seed, bot.Connection)
-					bot.Say(text, chat)
-				}
+			} else if rand.Intn(100) <= bot.Chance {
+				seed := updates[len(updates)-1].Message.Text
+				chat := updates[len(updates)-1].Message.Chat.Id
+				text := markov.Generate(seed, bot.Connection)
+				bot.Say(text, chat)
 			}
 
 		}
