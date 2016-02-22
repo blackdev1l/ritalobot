@@ -3,15 +3,15 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/garyburd/redigo/redis"
 	"io/ioutil"
 	"log"
 	"math/rand"
 	"net/http"
 	"net/url"
+	"regexp"
 	"strconv"
 	"time"
-	"regexp"
-	"github.com/garyburd/redigo/redis"
 )
 
 func sendCommand(method, token string, params url.Values) ([]byte, error) {
@@ -122,29 +122,29 @@ func (bot Bot) Listen() {
 		updates := bot.GetUpdates()
 		if updates != nil {
 
-			hasSpoken :=false
-			for i := 0; i<len(updates); i++ {
+			hasSpoken := false
+			for i := 0; i < len(updates); i++ {
 				update := updates[i]
 				re := regexp.MustCompile("\\/chobot\\s+(.+?)\\b")
 				match := re.FindAllStringSubmatch(update.Message.Text, -1)
-				if len(match)>0{
+				if len(match) > 0 {
 					text := markov.Generate(match[0][1], bot.Connection)
 					bot.Say(text, update.Message.Chat.Id)
 					hasSpoken = true
-					updates = append(updates[:i], updates[i+1:]...)	
+					updates = append(updates[:i], updates[i+1:]...)
 				}
 
 				re = regexp.MustCompile("\\/chorate\\s+([0-9]+?)\\b")
 				match = re.FindAllStringSubmatch(update.Message.Text, -1)
-				if len(match)>0{
+				if len(match) > 0 {
 					bot.Chance, _ = strconv.Atoi(match[0][1])
 					bot.Say("Rate updated", update.Message.Chat.Id)
 					hasSpoken = true
-					updates = append(updates[:i], updates[i+1:]...)	
+					updates = append(updates[:i], updates[i+1:]...)
 				}
 			}
 
-			if len(updates)>0 {
+			if len(updates) > 0 {
 				markov.StoreUpdates(updates, bot.Connection)
 				if rand.Intn(100) <= bot.Chance && !hasSpoken {
 					seed = updates[len(updates)-1].Message.Text
@@ -154,7 +154,7 @@ func (bot Bot) Listen() {
 					bot.Say(text, chat)
 				}
 			}
-			
+
 		}
 	}
 }
