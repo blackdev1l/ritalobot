@@ -45,7 +45,7 @@ func (bot *Bot) Commands(command string, chat int) {
 	if word[0] == "/chobot" && len(word) >= 2 {
 		text := markov.Generate(word[1], bot.Connection)
 		bot.Say(text, chat)
-	} else if word[0] == "/chorate" {
+	} /* else if word[0] == "/chorate" {
 		n, err := strconv.Atoi(word[1])
 		if err != nil || n <= 0 || n > 100 {
 			bot.Say("please use a number between 1 and 100", chat)
@@ -54,7 +54,7 @@ func (bot *Bot) Commands(command string, chat int) {
 			log.Printf("bot rate set to %v\n", bot.Chance)
 			bot.Say("Rate setted ", chat)
 		}
-	}
+	}*/
 
 }
 
