@@ -33,13 +33,15 @@ func (m Markov) Store(text string, c redis.Conn) {
 func (m Markov) Generate(seed string, connection redis.Conn) string {
 	log.Printf("seed: %s\n", seed)
 
-	splitted := strings.Split(seed, " ")
-
-	key := string(splitted[0])
-
 	s := []string{}
 
-	s = append(s, key)
+	s = append(s, seed)
+
+	splitted := strings.Split(seed, " ")
+
+	// Start the chain with the last word of the seed
+	key := splitted[len(splitted)-1]
+
 	for i := 1; i < m.length; i++ {
 
 		next, _ := redis.String(connection.Do("SRANDMEMBER", key))

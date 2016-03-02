@@ -42,8 +42,10 @@ func (bot *Bot) Commands(command string, chat int) {
 	markov := Markov{20}
 	word := strings.Split(command, " ")
 
+	seed := strings.Join(word[1:], " ") // Removes the initial command
+
 	if word[0] == "/chobot" && len(word) >= 2 {
-		text := markov.Generate(word[1], bot.Connection)
+		text := markov.Generate(seed, bot.Connection)
 		bot.Say(text, chat)
 	} /* else if word[0] == "/chorate" {
 		n, err := strconv.Atoi(word[1])
@@ -151,10 +153,13 @@ func (bot Bot) Poll() {
 					updates[0].Message.Chat.Id)
 
 			} else if rand.Intn(100) <= bot.Chance {
-				seed := updates[len(updates)-1].Message.Text
+				in_text := updates[len(updates)-1].Message.Text
+				parts := strings.Split(in_text, " ")
+				seed := parts[0] // Seed the chain with the first word only
+
 				chat := updates[len(updates)-1].Message.Chat.Id
-				text := markov.Generate(seed, bot.Connection)
-				bot.Say(text, chat)
+				out_text := markov.Generate(seed, bot.Connection)
+				bot.Say(out_text, chat)
 			}
 
 		}
