@@ -43,7 +43,7 @@ func (bot *Bot) Commands(command string, chat int) {
 	word := strings.Split(command, " ")
 
 	if word[0] == "/chobot" && len(word) >= 2 {
-		text := markov.Generate(word[1], bot.Connection)
+		text := markov.Generate(command, bot.Connection)
 		bot.Say(text, chat)
 	} /* else if word[0] == "/chorate" {
 		n, err := strconv.Atoi(word[1])
