@@ -47,7 +47,12 @@ func (bot *Bot) Commands(command string, chat int) {
 	if word[0] == "/chobot" && len(word) >= 2 {
 		text := markov.Generate(seed, bot.Connection)
 		bot.Say(text, chat)
-	} 
+	} else if word[0] == "/chosource" {
+		text := fmt.Sprintf("Author: %v \nSource: %v",
+			"@blackdev1l",
+			"https://github.com/blackdev1l/ritalobot")
+		bot.Say(text, chat)
+	}
 }
 
 type Bot struct {
