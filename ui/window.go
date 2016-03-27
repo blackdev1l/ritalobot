@@ -1,4 +1,4 @@
-package main
+package ui
 
 import (
 	"bufio"
@@ -22,7 +22,7 @@ func tbprint(x, y int, fg, bg t.Attribute, msg string) {
 }
 
 func showLogo() {
-	file, _ := os.Open("../logo")
+	file, _ := os.Open("logo") // weird shit happens here
 	scanner := bufio.NewScanner(file)
 	y := 0
 	for scanner.Scan() {
@@ -32,20 +32,21 @@ func showLogo() {
 	}
 }
 
-func main() {
+func redraw() {
+	_, h := t.Size()
+	showLogo()
+	tbprint(0, h-1, coldef, coldef, "press q to exit")
+	t.Flush()
+
+}
+
+// This fucntion handles keyboard keys
+// for now it just listen for the "q" key
+// and exit the program after the release
+func pollKeyboard() {
 	var current string
 	var curev t.Event
 	data := make([]byte, 0, 64)
-	err := t.Init()
-	if err != nil {
-		panic(err)
-	}
-	defer t.Close()
-	t.Clear(coldef, coldef)
-
-	showLogo()
-	t.Flush()
-mainloop:
 	for {
 		if cap(data)-len(data) < 32 {
 			newdata := make([]byte, len(data), len(data)+32)
@@ -54,12 +55,13 @@ mainloop:
 		}
 		beg := len(data)
 		d := data[beg : beg+32]
+
 		switch ev := t.PollRawEvent(d); ev.Type {
 		case t.EventRaw:
 			data = data[:beg+ev.N]
 			current = fmt.Sprintf("%q", data)
 			if current == `"q"` {
-				break mainloop
+				os.Exit(0)
 			}
 
 			for {
@@ -73,6 +75,31 @@ mainloop:
 			}
 		case t.EventError:
 			panic(ev.Err)
+		}
+	}
+
+}
+
+// window loop, this should get events from the main process
+func Show(ch <-chan int) {
+
+	err := t.Init()
+	if err != nil {
+		panic(err)
+	}
+	defer t.Close()
+	t.Clear(coldef, coldef)
+	go pollKeyboard()
+
+	t.Flush()
+	for {
+		redraw()
+		select {
+		case number := <-ch:
+			if number == 0 {
+				tbprint(0, 8, coldef, coldef, "redis ")
+				tbprint(6, 8, t.ColorGreen, coldef, "OK")
+			}
 		}
 	}
 }

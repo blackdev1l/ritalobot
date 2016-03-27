@@ -1,13 +1,13 @@
 package main
 
 import (
+	"./ui"
 	"flag"
 	"fmt"
+	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"log"
 	"path/filepath"
-
-	"gopkg.in/yaml.v2"
 )
 
 var (
@@ -56,8 +56,9 @@ func readConfig(configPath string) int {
 }
 
 func main() {
+	botChan := make(chan int)
 
-	printLogo()
+	//printLogo()
 
 	flag.StringVar(&token, "token", "", "authentication token for the telegram bot")
 	flag.StringVar(&connection, "conn", "tcp", "type of connection and/or ip of redis database")
@@ -73,7 +74,8 @@ func main() {
 		log.Fatalln("authentication token not valid, use config or flags to pass it")
 	}
 
+	go ui.Show(botChan)
 	bot := Bot{}
-	bot.Listen()
+	bot.Listen(botChan)
 
 }
