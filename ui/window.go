@@ -61,6 +61,7 @@ func pollKeyboard() {
 			data = data[:beg+ev.N]
 			current = fmt.Sprintf("%q", data)
 			if current == `"q"` {
+				t.Close()
 				os.Exit(0)
 			}
 
@@ -88,17 +89,18 @@ func Show(ch <-chan int) {
 		panic(err)
 	}
 	defer t.Close()
+	t.SetInputMode(t.InputAlt | t.InputMouse)
 	t.Clear(coldef, coldef)
 	go pollKeyboard()
 
-	t.Flush()
 	for {
 		redraw()
 		select {
 		case number := <-ch:
+			tbprint(0, 8, coldef, coldef, "redis ")
 			if number == 0 {
-				tbprint(0, 8, coldef, coldef, "redis ")
 				tbprint(6, 8, t.ColorGreen, coldef, "OK")
+				t.Flush()
 			}
 		}
 	}

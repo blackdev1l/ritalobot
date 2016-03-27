@@ -127,13 +127,10 @@ func (bot Bot) Listen(ch chan<- int) {
 	tmp := ":" + strconv.Itoa(port)
 	bot.Connection, err = redis.Dial(connection, tmp)
 	if err != nil {
-		//		fmt.Println("connection to redis failed")
-		ch <- -1
+		fmt.Println("connection to redis failed")
 		log.Fatal(err)
 	}
 	ch <- 0
-	//fmt.Printf("redis connection: %v | port is %v\n", connection, port)
-	//fmt.Printf("chance rate %v%!\n", bot.Chance)
 
 	bot.Poll()
 
